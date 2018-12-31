@@ -1,9 +1,11 @@
 package model.dao.impl;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,14 +20,47 @@ import model.entities.Seller;
 public class SellerDaoJDBC implements SellerDao {
 
 	private Connection conn = null;
-	
+
 	public SellerDaoJDBC(Connection conn) {
 		this.conn = conn;
 	}
 
 	@Override
 	public void insert(Seller obj) {
-		// TODO Auto-generated method stub
+		PreparedStatement stmt = null;
+		
+		try {
+			
+			stmt = conn.prepareStatement(
+						"INSERT INTO seller "
+						+"(Name, Email, BirthDate, BaseSalary, DepartmentId) "
+						+"VALUES "
+						+"(?, ?, ?, ?, ?)",
+						Statement.RETURN_GENERATED_KEYS
+					);
+			stmt.setString(1, obj.getName());
+			stmt.setString(2, obj.getEmail());
+			stmt.setDate(3, new Date(obj.getBithDate().getTime()));
+			stmt.setDouble(4, obj.getBaseSalary());
+			stmt.setInt(5, obj.getDepartment().getId());
+			
+			int rows = stmt.executeUpdate();
+			if( rows > 0 ) {
+				ResultSet rs = stmt.getGeneratedKeys();
+				if(rs.next()) {
+					int id = rs.getInt(1);
+					obj.setId(id);
+				}
+				DB.closeResultSet(rs);
+			} else {
+				throw new DbException("Unexpected error, No rows affected!");
+			}
+			
+		} catch(SQLException e) {
+			throw new DbException(e.getMessage());
+		} finally {
+			DB.closeStatement(stmt);
+		}
 		
 	}
 
